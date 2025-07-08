@@ -13,15 +13,15 @@ struct MultilPickerView: View {
     @StateObject private var vm = PhotoPickerViewModel()
     
     let cols = [
-        GridItem(.flexible()),
-        GridItem(.flexible()),
-        GridItem(.flexible())
+        GridItem(.flexible(), spacing: 16), // 控制列之间的距离
+        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: 16)
     ]
     
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVGrid(columns: cols, spacing: 10) {
+                LazyVGrid(columns: cols, spacing: 16) { // 控制行之间的距离
                     
                     // vm.images 是一个非可选类型的数组，不能用if let，因为if let 只能用于可选类型的绑定
                     if !vm.images.isEmpty {

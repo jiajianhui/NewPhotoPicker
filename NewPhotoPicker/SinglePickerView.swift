@@ -7,16 +7,23 @@
 
 import SwiftUI
 import PhotosUI
+import SwiftData
 
 struct SinglePickerView: View {
     
     @StateObject private var vm = PhotoPickerViewModel()
     
+    // 查询数据库
+    @Query(sort: \Photo.createAt, order: .reverse) var photos: [Photo]
+    
+    @Environment(\.modelContext) var context
+    
     var body: some View {
         NavigationStack {
             VStack {
-                if let image = vm.image {
-                    image
+                if let data = photos.first?.image,
+                   let uiImage = UIImage(data: data) {
+                    Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFit()
                 }
@@ -29,6 +36,11 @@ struct SinglePickerView: View {
                     }
 
                 }
+            }
+        }
+        .onChange(of: vm.selectedPhoto) { oldValue, newValue in
+            Task {
+                try? await vm.loadtransFerable(from: vm.selectedPhoto, context: context)
             }
         }
     }

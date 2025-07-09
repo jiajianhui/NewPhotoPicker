@@ -7,10 +7,16 @@
 
 import SwiftUI
 import PhotosUI
+import SwiftData
 
 struct MultilPickerView: View {
     
     @StateObject private var vm = PhotoPickerViewModel()
+    
+    // 查询数据库
+    @Query(sort: \Photo.createAt, order: .reverse) var photos: [Photo]
+    
+    @Environment(\.modelContext) var context
     
     let cols = [
         GridItem(.flexible(), spacing: 16), // 控制列之间的距离
@@ -24,17 +30,19 @@ struct MultilPickerView: View {
                 LazyVGrid(columns: cols, spacing: 16) { // 控制行之间的距离
                     
                     // vm.images 是一个非可选类型的数组，不能用if let，因为if let 只能用于可选类型的绑定
-                    if !vm.images.isEmpty {
-                        ForEach(0..<vm.images.count, id: \.self) { index in
+                    if !photos.isEmpty {
+                        ForEach(0..<photos.count, id: \.self) { index in
                             Rectangle()
                                 .aspectRatio(1, contentMode: .fit)
                                 
                                 .overlay {
-                                    vm.images[index]
-                                        .resizable()
-                                        .scaledToFill()
-                                        .aspectRatio(1, contentMode: .fit)
-                                        
+                                    if let data = photos[index].image,
+                                       let uiImage = UIImage(data: data) {
+                                        Image(uiImage: uiImage)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .aspectRatio(1, contentMode: .fit)
+                                    }
                                 }
                             
                                 // 先裁剪，然后再叠加描边。否则会有黑色描边
@@ -59,6 +67,16 @@ struct MultilPickerView: View {
                         Image(systemName: "photo.badge.plus")
                     }
 
+                }
+            }
+            
+            // 监听数据
+            .onChange(of: vm.selectedPhotos) { oldValue, newValue in
+                Task {
+                    if !newValue.isEmpty {
+                        try? await vm.loadtransFerable(from: vm.selectedPhotos, context: context)
+                        vm.selectedPhotos = []
+                    }
                 }
             }
         }
